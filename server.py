@@ -1,8 +1,9 @@
 import threading
 import socket
+import clients
 
 host = '127.0.0.1'
-port = 8080
+port = 65432
 client_number = 5
 
 
@@ -18,7 +19,7 @@ def server(host, port):
         while True:
             client_socket, client_address = s.accept()
             clients_list.append(client_socket)
-            thread = threading.Thread(target=clients,
+            thread = threading.Thread(target=clients.clients,
                                       args=(client_socket, clients_list, message_history, lock))
             thread.start()
             print('Connected by ', client_address)
@@ -36,20 +37,9 @@ def server(host, port):
             if len(message_history) > 10:
                 message_history.pop(0)
             print(message_history)
+            client_socket.send("\n".join(message_history).encode('utf-8'))
             client_socket.sendall(data)
         client_socket.close()
 
-#Creating clients
-def clients():
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((host, port))
-    thread = threading.Thread()
-    thread.start()
-    message = 'Hello World!'
-    client.send(message.encode('utf-8'))
-
-    data = client.recv(1024)
-    print(f"Data from server {data.decode('utf-8')}")
-    client.close()
 
 server(host, port)
