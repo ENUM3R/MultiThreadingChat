@@ -1,45 +1,48 @@
 import threading
 import socket
-import clients
+import datetime
 
-host = '127.0.0.1'
 port = 65432
-client_number = 5
+host = "127.0.0.1"
+clients_list = {}
+lock = threading.Lock()
 
-
-#Creating server TCP
-def server(host, port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((host, port))
-        s.listen(client_number)
-        print('Waiting for connection...')
-        clients_list = []
-        message_history = []
-        lock = threading.Lock()
-        while True:
-            client_socket, client_address = s.accept()
-            clients_list.append(client_socket)
-            thread = threading.Thread(target=clients.clients,
-                                      args=(client_socket, clients_list, message_history, lock))
-            thread.start()
-            print('Connected by ', client_address)
-            data = client_socket.recv(1024)
-            print(f"Data: {data.decode()}")
-            lock.acquire()
-            try:
-                if client_socket in clients_list:
-                    clients_list.remove(client_socket)
-            finally:
-                lock.release()
+def manage_chat(client_socket, client_address):
+    while True:
+        try:
+            data = client_socket.recv(1024).decode()
             if not data:
                 break
-            message_history.append(data.decode())
-            if len(message_history) > 10:
-                message_history.pop(0)
-            print(message_history)
-            client_socket.send("\n".join(message_history).encode('utf-8'))
-            client_socket.sendall(data)
-        client_socket.close()
+        except ConnectionResetError:
+            break
+        time = datetime.datetime.now().strftime("%H:%M:%S")
+        msg = f"Client: {client_address}:[{time}]:{data}"
+        print(msg)
+        while True:
+            response = input(f"Server->{client_address}: ")
+            if response != "":
+                try:
+                    client_socket.send(response.encode())
+                    break
+                except:
+                    break
+    with lock:
+        del clients_list[client_address]
+    client_socket.close()
+    print(f"Connection with {client_address} disconnected.")
 
+def main():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind((host, port))
+    server_socket.listen()
+    print(f"Server Listening on host:{host}, port:{port}")
+    while True:
+        client_socket, client_address = server_socket.accept()
+        print("Client connected: ", client_address)
+        with lock:
+            clients_list[client_address] = client_socket
+        thread = threading.Thread(target=manage_chat, args=(client_socket,client_address))
+        thread.start()
 
-server(host, port)
+if __name__ == "__main__":
+    main()

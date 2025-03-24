@@ -1,41 +1,34 @@
 import threading
 import socket
 
-host = '127.0.0.1'
 port = 65432
-client_number = 5
+host = "127.0.0.1"
 
-clients_list = [1,2,3,4]
-message_history = []
-lock = threading.Lock()
-
-#Creating clients
-def clients(client_socket, clients_list, message_history, lock):
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((host, port))
-    history = client.recv(4096).decode('utf-8')
-    print(f"Chat history:\n{history}")
-    thread = threading.Thread(target=receive_message, args=(client,))
-    thread.start()
-    print(f"If you want to exit, write 'exit'")
-    while True:
-        message = input(" ")
-        if message.lower() == "exit":
-            break
-        client.send(message.encode('utf-8'))
-    client.close()
-
-def receive_message(client):
+def receive_message(client_socket, ):
     while True:
         try:
-            data = client.recv(1024)
+            data = client_socket.recv(1024).decode()
             if not data:
                 break
-            print(f"\nData from server: {data.decode('utf-8')}\n> ", end="")
+            print(f"\nServer: {data}\n ", end="")
         except:
-            print("\nConnection error.")
             break
+def send_message(client_socket):
+    print("Type your message and press enter, write 'exit' to quit")
+    while True:
+        client_msg = input(">")
+        if client_msg.lower() == "exit":
+            break
+        client_socket.send(client_msg.encode())
+    client_socket.close()
 
-if __name__ == "__main__":
+def main():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clients(client_socket, clients_list, message_history, lock)
+    client_socket.connect((host, port))
+    receive_thread = threading.Thread(target=receive_message, args=(client_socket,))
+    send_thread = threading.Thread(target=send_message, args=(client_socket,))
+    receive_thread.start()
+    send_thread.start()
+
+if __name__ == '__main__':
+    main()
