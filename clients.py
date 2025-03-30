@@ -4,7 +4,7 @@ import socket
 port = 65432
 host = "127.0.0.1"
 
-#function to receive message from server
+#function to receive messages from server, handles separate threads
 def receive_message(client_socket):
     while True:
         try:
@@ -16,7 +16,7 @@ def receive_message(client_socket):
         except:
             break
 
-#function to send message from client to server
+#function to send message from client to server, handles separate threads
 def send_message(client_socket):
     print("Type your message and press enter, write 'exit' to quit")
     while True:
@@ -30,11 +30,11 @@ def send_message(client_socket):
             break
     client_socket.close()
 
-#main function where clients starts working
+#main function, client initialization
 def main():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((host, port))
-
+    #starting threads for sending and receiving messages
     receive_thread = threading.Thread(target=receive_message, args=(client_socket,))
     send_thread = threading.Thread(target=send_message, args=(client_socket,))
     receive_thread.start()
