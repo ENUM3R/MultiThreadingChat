@@ -1,17 +1,16 @@
 import threading
 import socket
 import datetime
+import consoleColors as cc
 
 port = 65432
 host = "127.0.0.1"
-clients_list = {} #dictionary for clients address
-lock = threading.Lock() #blockade for synchronization access to clients_list
+clients_list = {}  # Dictionary for clients: key = address, value = socket
+lock = threading.Lock()  # Lock for synchronization
 
-#function handles communication between the server and a connected client
+
+# Function to manage communication with a client
 def manage_chat(client_socket, client_address):
-    global selected_client_port
-    selected_client_port = client_address[1]
-    #receiving messages from the client
     while True:
         try:
             data = client_socket.recv(1024).decode()
@@ -19,68 +18,72 @@ def manage_chat(client_socket, client_address):
                 break
         except ConnectionResetError:
             break
-        #displaying the received message
+
         time = datetime.datetime.now().strftime("%H:%M:%S")
-        msg = f"Client: {client_address}:[{time}]:{data}"
+        msg = f"{cc.ConsoleColors.BLUE}Client: {client_address}:[{time}]:{data}"
         print(msg)
+
+        # Broadcast the message to all other clients
+        with lock:
+            for client_addr, client_sock in clients_list.items():
+                if client_addr != client_address:
+                    try:
+                        client_sock.send(msg.encode())
+                    except:
+                        pass
+        # If client sends 'exit', disconnect them
         if data.lower() == "exit":
+            print(f"{cc.ConsoleColors.RED} Connection with client {client_address} has ended!")
             break
-        selected_client_port = client_address[1]
-        while True:
-            response = input(f"Server->{selected_client_port} ('change' to change client, 'end' to stop server): \n")
-            #shutting down server
-            if response.lower() == "end":
-                print("Shutting down...")
-                with lock:
-                    for _, client_sock in clients_list.items():
-                        client_sock.close()
-                exit()
-            #changing client
-            elif response.lower() == "change":
-                client_choice_port = input("Enter client port to answer: ")
-                try:
-                    client_choice_port = int(client_choice_port)
-                    with lock:
-                        if client_choice_port in [addr[1] for addr in clients_list.keys()]:
-                            selected_client_port = client_choice_port
-                        else:
-                            print(f"No client found on port {client_choice_port}, please try again.")
-                except ValueError:
-                    print("Invalid input. Please enter a valid port number.")
-                continue
-            #sending response to selected client
-            else:
-                with lock:
-                    selected_client_socket = next(
-                        (client_sock for client_addr, client_sock in clients_list.items() if
-                         client_addr[1] == selected_client_port),
-                        None
-                    )
-                    if selected_client_socket:
-                        selected_client_socket.send(response.encode())
-                    else:
-                        print("No client selected or client disconnected.")
-                break
-    #remowing disconnected client
+
+    # Remove client from the list when they disconnect
     with lock:
         del clients_list[client_address]
     client_socket.close()
     print(f"Connection with {client_address} lost.")
 
-#main function, server initialization
+
+# Function to allow the server to send a message to all clients
+def server_input_thread():
+    while True:
+        response = input(f"{cc.ConsoleColors.MAGENTA}Server: ")
+        if response.lower() == "exit":
+            print(f"{cc.ConsoleColors.WHITE}Shutting down server...")
+            with lock:
+                for _, client_sock in clients_list.items():
+                    client_sock.send("Server is shutting down...".encode())
+                    client_sock.close()
+            exit()
+        elif response.strip():
+            # Send the message to all clients
+            with lock:
+                for _, client_sock in clients_list.items():
+                    try:
+                        client_sock.send(f"{response}".encode())
+                    except:
+                        pass
+
+
+# Main function to start the server
 def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen()
     print(f"Server Listening on host:{host}, port:{port}")
-    #accepting clients and starting threads
+
+    # Start a thread for the server to send messages
+    server_thread = threading.Thread(target=server_input_thread, daemon=True)
+    server_thread.start()
+
+    # Accept incoming client connections and start threads for each
     while True:
         client_socket, client_address = server_socket.accept()
         print("Client connected: ", client_address)
         with lock:
             clients_list[client_address] = client_socket
-        thread = threading.Thread(target=manage_chat, args=(client_socket,client_address))
-        thread.start()
+        client_thread = threading.Thread(target=manage_chat, args=(client_socket, client_address))
+        client_thread.start()
+
 
 if __name__ == "__main__":
     main()
