@@ -18,11 +18,9 @@ def manage_chat(client_socket, client_address):
                 break
         except ConnectionResetError:
             break
-
         time = datetime.datetime.now().strftime("%H:%M:%S")
         msg = f"{cc.ConsoleColors.BLUE}Client: {client_address}:[{time}]:{data}"
         print(msg)
-
         # Broadcast the message to all other clients
         with lock:
             for client_addr, client_sock in clients_list.items():
@@ -35,13 +33,11 @@ def manage_chat(client_socket, client_address):
         if data.lower() == "exit":
             print(f"{cc.ConsoleColors.RED} Connection with client {client_address} has ended!")
             break
-
     # Remove client from the list when they disconnect
     with lock:
         del clients_list[client_address]
     client_socket.close()
     print(f"Connection with {client_address} lost.")
-
 
 # Function to allow the server to send a message to all clients
 def server_input_thread():
@@ -54,6 +50,25 @@ def server_input_thread():
                     client_sock.send("Server is shutting down...".encode())
                     client_sock.close()
             exit()
+        elif response.lower().startswith("choose "):
+            # Get the target client port from the input command
+            try:
+                _, target_port, *message = response.split()
+                target_port = int(target_port)
+                message = " ".join(message)
+                # Find the client by port and send the message
+                target_client = None
+                for client_addr, client_sock in clients_list.items():
+                    if client_addr[1] == target_port:
+                        target_client = client_sock
+                        break
+                if target_client:
+                    target_client.send(f"{cc.ConsoleColors.CYAN}Message from server: {message}".encode())
+                    print(f"Message sent to client with port {target_port}.")
+                else:
+                    print(f"{cc.ConsoleColors.RED}Client with port {target_port} not found.")
+            except ValueError:
+                print(f"{cc.ConsoleColors.RED}Invalid port or message format.")
         elif response.strip():
             # Send the message to all clients
             with lock:

@@ -1,13 +1,21 @@
-Projekt nr.2 z przedmiotu systemy operacyjne 2: Wielowątkowy serwer chatu, wykonany w Pythonie z użyciem biblioteki threading, Autor: Cyprian Kozubek 272959
+Projekt nr.2 z przedmiotu systemy operacyjne 2:
+Wielowątkowy serwer chatu, wykonany w Pythonie z użyciem biblioteki threading, Autor: Cyprian Kozubek 272959
 
-Instrukcje uruchomienia projektu: Program należy sklonować do używanego IDE (branch master), sprawdzić kompletność bibliotek w plikach. 
+Instrukcje uruchomienia projektu: Program należy sklonować do używanego IDE (master branch ), sprawdzić kompletność bibliotek w plikach. 
 Uruchomić w terminalu plik server.py, komendą python server.py, następnie w nowych terminalach otworzyć plik clients.py, komendą python clients.py.
 Po wykonaniu tych kroków powinna być możliwość konwersacji serwera z klientami, aby skończyć rozmowę z poziomu klienta, należy wpisać 'exit'.
-Z poziomu serwera można wybrać klienta do odpowiedzi z użyciem 'change', zakończyć działanie serwera z użyciem 'end' i wysłać odpowiedź do klienta.
+Z poziomu serwera można wybrać klienta standardowo wysyłamy wiadomość do wszystkich klientów (broadcast), dodatkowo możemy wysłać
+wiadomość do wybranego klienta z użyciem 'choose', podając jego adres portu, który widoczny jest w terminalu oraz wiadomość,
+aby zakończyć działanie serwera należy wpisać 'exit'. Z poziomu klienta wysyłamy wiadomość do wszystkich, aby zakończyć rozmowę
+należy wpisać "exit".
 
-Opis problemu: W projekcie należało wykonać wielowątkowy serwer chatu, podobny do chatbota, który obsłuży rozmowę z wieloma klientami naraz. 
-Wielu klientów naraz może pisać wiadomości do serwera, który odpowiada każdemu klientowi. 
-Klient widzi tylko swoje wiadomości oraz informację zwrotną z serwera, z poziomu serwera widzimy konwersację ze wszystkimi klientami, którzy wysłali wiadomość.
+Opis problemu: W projekcie należało wykonać wielowątkowy serwer chatu, 
+który umożliwia prowadzenie rozmowy z wieloma klientami jednocześnie.
+Serwer umożliwia zarówno wysyłanie wiadomości bezpośrednio do wybranego klienta, jak i nadawanie wiadomości do 
+wszystkich połączonych klientów (broadcasting). Klient widzi swoje wiadomości do serwera, jego odpowiedź
+oraz wiadomości innych użytkowników. W projekcie dodatkowo zastosowano kolorowanie konsoli z wykorzystaniem kodów ANSI
+(plik consoleColors.py). Każdy typ wiadomości (klient, serwer, błąd) ma przypisany inny kolor, 
+co znacząco poprawia czytelność i estetykę komunikatów wyświetlanych w terminalu.
 
 Wątki i co reprezentują: 
 1. Dla serwera (plik server.py)
@@ -15,6 +23,9 @@ Wątki i co reprezentują:
 Każdy nowy klient, który się łączy, uruchamia nowy wątek w funkcji manage_chat().
 Dzięki temu serwer może obsługiwać wielu klientów jednocześnie. 
 Serwer zarządza komunikacją poprzez iteracyjne odbieranie wiadomości od klientów i ich przekazywanie do wybranych odbiorców.
+
+Dodatkowo uruchamiany jest wątek server_input_thread, który umożliwia operatorowi serwera ręczne wprowadzanie wiadomości na żywo,
+które następnie są przesyłane do wszystkich połączonych klientów (broadcast) lub do wybranego klienta.
 
 2. Dla klienta (plik clients.py)
 Każdy klient tworzy dwa wątki:
@@ -41,4 +52,6 @@ Rozwiązanie: Serwer używa blokady (lock) przed wysłaniem wiadomości. Zapewni
    
 Problem: Gdy klient się rozłącza, jego gniazdo powinno zostać poprawnie usunięte z clients_list, aby uniknąć błędów i prób wysyłania wiadomości do nieistniejącego połączenia.
 
-Rozwiązanie: Usunięcie klienta odbywa się wewnątrz with lock, co zabezpiecza przed równoczesnym dostępem innych wątków:
+Rozwiązanie: Usunięcie klienta odbywa się wewnątrz with lock, co zabezpiecza przed równoczesnym dostępem innych wątków.
+
+
