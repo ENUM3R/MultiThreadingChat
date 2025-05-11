@@ -36,7 +36,6 @@ które następnie są przesyłane do wszystkich połączonych klientów (broadca
 Każdy klient tworzy dwa wątki:
 * receive_thread – odbiera wiadomości od serwera i wyświetla je na ekranie.
 * send_thread – wysyła wiadomości do serwera.
-
 Dzięki temu klient może jednocześnie wysyłać i odbierać wiadomości, zapewniając płynną komunikację.
 ---
 ## Sekcje krytyczne i ich rozwiązanie: 
