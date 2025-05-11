@@ -4,11 +4,14 @@
 ## Instrukcje uruchomienia projektu:
 Program należy sklonować do używanego IDE (master branch ), sprawdzić kompletność bibliotek w plikach. 
 Uruchomić w terminalu plik server.py, komendą python server.py, następnie w nowych terminalach otworzyć plik clients.py, komendą python clients.py.
-Po wykonaniu tych kroków powinna być możliwość konwersacji serwera z klientami, aby skończyć rozmowę z poziomu klienta, należy wpisać 'exit'.
-Z poziomu serwera można wybrać klienta, standardowo wysyłamy wiadomość do wszystkich klientów (broadcast), dodatkowo możemy wysłać
+Po wykonaniu tych kroków powinna być możliwość konwersacji serwera z klientami.
+---
+## Działanie programu:
+Z poziomu serwera standardowo wysyłamy wiadomość do wszystkich klientów (broadcast), dodatkowo możemy wysłać
 wiadomość do wybranego klienta z użyciem 'choose', podając jego adres portu, który widoczny jest w terminalu, oraz wiadomość,
 aby zakończyć działanie serwera należy wpisać 'exit'. Z poziomu klienta wysyłamy wiadomość do wszystkich, aby zakończyć rozmowę
-należy wpisać "exit".
+należy wpisać "exit". Każdy klient widzi wszystkie wiadomości, oprócz wiadomości prywatnych z serwera do innych klientów.
+Serwer widzi wszystkie wiadomości klientów, także wiadomości prywatne.
 ---
 ## Opis problemu:
 W projekcie należało wykonać wielowątkowy serwer chatu, 
